@@ -31,7 +31,9 @@ namespace Set_BE
 				options.AddPolicy("AllowReactApp",
 					policy =>
 					{
-						policy.WithOrigins("http://localhost:5173") 
+						policy.WithOrigins("http://localhost:5173",
+						                   "https://ro-code.me"
+                                           ) 
 							  .AllowAnyHeader()
 							  .AllowAnyMethod();
 					});
