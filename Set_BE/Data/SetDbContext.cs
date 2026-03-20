@@ -10,6 +10,7 @@ namespace Set_BE.Data
 		public DbSet<User> Users { get; set; }
 		public DbSet<MovieCode> MovieCodes { get; set; }
 		public DbSet<Rating> Ratings { get; set; }
+		public DbSet<Comment> Comments { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{

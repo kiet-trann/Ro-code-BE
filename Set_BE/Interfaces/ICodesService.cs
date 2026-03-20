@@ -11,6 +11,7 @@ namespace Set_BE.Interfaces
 		Task<PagedResponse<MovieCodeDto>> GetDroppedAsync(int userId, int page, int pageSize);
 		Task<IEnumerable<MovieCodeDto>> DropCodeAsync(CreateCodeDto dto);
 		Task<bool> RateCodeAsync(int codeId, RateCodeDto dto);
-		
+		Task<bool> IncreaseViewCountAsync(int codeId);
+
 	}
 }

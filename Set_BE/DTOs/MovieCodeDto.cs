@@ -8,5 +8,8 @@
 		public string TimeAgo { get; set; } = string.Empty;
 		public double AvgRating { get; set; }
 		public bool IsWatched { get; set; }
+		public string ActorName { get; set; } = string.Empty;
+		public string Category { get; set; } = "Movie";
+		public int ViewCount { get; set; } = 0;
 	}
 }
