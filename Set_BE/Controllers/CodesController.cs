@@ -73,5 +73,15 @@ namespace Set_BE.Controllers
 		{
 			return Ok(await _codesService.GetRecommendedAsync(userId, page, limit));
 		}
+
+		[HttpPost("{id}/view")]
+		public async Task<IActionResult> IncreaseView(int id)
+		{
+			var success = await _codesService.IncreaseViewCountAsync(id);
+			if (!success)
+				return NotFound(new { message = "Không tìm thấy code này!" });
+
+			return Ok(new { message = "Đã tăng lượt xem thành công!" });
+		}
 	}
 }
