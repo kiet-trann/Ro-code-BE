@@ -11,14 +11,16 @@ namespace Set_BE
 	{
 		public static void Main(string[] args)
 		{
-			var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-			{
-				Args = args,
-				ContentRootPath = Directory.GetCurrentDirectory()
-			});
+			var builder = WebApplication.CreateBuilder(args);
 
-			builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
-			builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false);
+			
+			foreach (var source in builder.Configuration.Sources)
+			{
+				if (source is Microsoft.Extensions.Configuration.Json.JsonConfigurationSource jsonSource)
+				{
+					jsonSource.ReloadOnChange = false;
+				}
+			}
 
 			// Add services to the container.
 
