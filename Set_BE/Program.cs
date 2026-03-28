@@ -11,7 +11,14 @@ namespace Set_BE
 	{
 		public static void Main(string[] args)
 		{
-			var builder = WebApplication.CreateBuilder(args);
+			var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+			{
+				Args = args,
+				ContentRootPath = Directory.GetCurrentDirectory()
+			});
+
+			builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+			builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false);
 
 			// Add services to the container.
 
