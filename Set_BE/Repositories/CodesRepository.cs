@@ -104,7 +104,15 @@ namespace Set_BE.Repositories
 			// 1. Lọc theo thể loại (Nếu có chọn khác "All")
 			if (!string.IsNullOrWhiteSpace(category) && category != "All")
 			{
-				query = query.Where(c => c.Category == category);
+				if (category == "Movie")
+				{
+					// Ép những code đời cũ (null hoặc rỗng) vào chung mâm với Movie
+					query = query.Where(c => c.Category == "Movie" || c.Category == null || c.Category == "");
+				}
+				else
+				{
+					query = query.Where(c => c.Category == category);
+				}
 			}
 
 			// 2. Tìm kiếm theo từ khóa (Tìm cả trong Mã Code lẫn Tên Diễn Viên)
