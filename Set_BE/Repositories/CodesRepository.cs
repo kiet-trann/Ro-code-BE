@@ -134,7 +134,43 @@ namespace Set_BE.Repositories
 
 			return (codes, total);
 		}
+		public async Task<bool> ToggleSaveCodeAsync(int userId, int codeId)
+		{
+			// Kiểm tra xem user này đã lưu code này chưa
+			var existingSave = await _context.SavedCodes
+				.FirstOrDefaultAsync(sc => sc.UserId == userId && sc.MovieCodeId == codeId);
 
+			if (existingSave != null)
+			{
+				// Đã lưu rồi -> Xóa đi (Bỏ lưu)
+				_context.SavedCodes.Remove(existingSave);
+				await _context.SaveChangesAsync();
+				return false;
+			}
+			else
+			{
+				// Chưa lưu -> Thêm mới vào (Lưu)
+				_context.SavedCodes.Add(new SavedCode { UserId = userId, MovieCodeId = codeId });
+				await _context.SaveChangesAsync();
+				return true;
+			}
+		}
+
+		public async Task<(IEnumerable<MovieCode> Codes, int TotalCount)> GetSavedCodesAsync(int userId, int page, int pageSize)
+		{
+			// Lấy ra danh sách các code mà user đã lưu, xếp cái mới lưu lên đầu
+			var query = _context.SavedCodes
+				.Where(sc => sc.UserId == userId)
+				.OrderByDescending(sc => sc.SavedAt)
+				.Select(sc => sc.MovieCode) // Từ bảng trung gian, chọc lấy bảng MovieCode
+				.Include(c => c.Author)
+				.Include(c => c.Ratings);
+
+			var total = await query.CountAsync();
+			var codes = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+			return (codes, total);
+		}
 		public async Task SaveChangesAsync()
 		{
 			await _context.SaveChangesAsync();

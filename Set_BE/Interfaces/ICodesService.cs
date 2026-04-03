@@ -14,5 +14,10 @@ namespace Set_BE.Interfaces
 		Task<bool> IncreaseViewCountAsync(int codeId);
 		Task<MovieCodeDto> SpinRandomCodeAsync(int userId);
 		Task<PagedResponse<MovieCodeDto>> SearchCodesAsync(int currentUserId, string keyword, string category, int page, int pageSize);
+		// 1. Hàm bật/tắt trạng thái lưu (Toggle)
+		Task<bool> ToggleSaveCodeAsync(int userId, int codeId);
+
+		// 2. Hàm lấy danh sách Tủ Đồ của user
+		Task<PagedResponse<MovieCodeDto>> GetSavedCodesAsync(int userId, int page, int pageSize);
 	}
 }

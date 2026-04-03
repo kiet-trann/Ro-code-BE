@@ -1,4 +1,5 @@
-﻿using Set_BE.Models;
+﻿using Set_BE.DTOs;
+using Set_BE.Models;
 
 namespace Set_BE.Interfaces
 {
@@ -16,6 +17,10 @@ namespace Set_BE.Interfaces
 		Task AddRatingAsync(Rating rating);
 		Task SaveChangesAsync();
 		Task<(IEnumerable<MovieCode> Codes, int TotalCount)> SearchCodesAsync(string keyword, string category, int page, int pageSize);
+		// 1. Hàm bật/tắt trạng thái lưu (Toggle)
+		Task<bool> ToggleSaveCodeAsync(int userId, int codeId);
 
+		// 2. Hàm lấy danh sách Tủ Đồ của user
+		Task<(IEnumerable<MovieCode> Codes, int TotalCount)> GetSavedCodesAsync(int userId, int page, int pageSize);
 	}
 }

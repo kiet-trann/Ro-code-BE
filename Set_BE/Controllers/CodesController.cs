@@ -115,5 +115,33 @@ namespace Set_BE.Controllers
 				return StatusCode(500, new { message = ex.Message });
 			}
 		}
+
+		[HttpPost("{codeId}/save")]
+		public async Task<IActionResult> ToggleSaveCode(int codeId, [FromBody] int userId)
+		{
+			try
+			{
+				var isSaved = await _codesService.ToggleSaveCodeAsync(userId, codeId);
+				return Ok(new { isSaved });
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+		}
+
+		[HttpGet("saved/{userId}")]
+		public async Task<IActionResult> GetSavedCodes(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+		{
+			try
+			{
+				var result = await _codesService.GetSavedCodesAsync(userId, page, pageSize);
+				return Ok(result);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = ex.Message });
+			}
+		}
 	}
 }

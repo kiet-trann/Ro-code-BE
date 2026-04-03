@@ -285,6 +285,35 @@ namespace Set_BE.Services
 			};
 		}
 
+		public async Task<bool> ToggleSaveCodeAsync(int userId, int codeId)
+		{
+			return await _repository.ToggleSaveCodeAsync(userId, codeId);
+		}
+
+		public async Task<PagedResponse<MovieCodeDto>> GetSavedCodesAsync(int userId, int page, int pageSize)
+		{
+			var (codes, total) = await _repository.GetSavedCodesAsync(userId, page, pageSize);
+
+			var dtos = codes.Select(code => new MovieCodeDto
+			{
+				Id = code.Id,
+				CodeText = code.CodeText,
+				Author = code.Author?.Username ?? "ẩn_danh",
+				ActorName = code.ActorName,
+				Category = code.Category,
+				ViewCount = code.ViewCount,
+				TimeAgo = GetTimeAgo(code.CreatedAt),
+				AvgRating = Math.Round(code.AverageRating, 1),
+				IsWatched = true // (Cứ cho là true đi vì họ đã lưu thì ắt đã xem/quan tâm)
+			});
+
+			return new PagedResponse<MovieCodeDto>
+			{
+				Items = dtos,
+				CurrentPage = page,
+				TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+			};
+		}
 		private string GetTimeAgo(DateTime createdAt)
 		{
 			var span = DateTime.UtcNow - createdAt;
