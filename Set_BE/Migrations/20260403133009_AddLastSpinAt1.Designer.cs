@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Set_BE.Data;
@@ -11,9 +12,11 @@ using Set_BE.Data;
 namespace Set_BE.Migrations
 {
     [DbContext(typeof(SetDbContext))]
-    partial class SetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260403133009_AddLastSpinAt1")]
+    partial class AddLastSpinAt1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
