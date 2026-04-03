@@ -83,5 +83,19 @@ namespace Set_BE.Controllers
 
 			return Ok(new { message = "Đã tăng lượt xem thành công!" });
 		}
+
+		[HttpPost("spin/{userId}")]
+		public async Task<IActionResult> SpinGacha(int userId)
+		{
+			try
+			{
+				var result = await _codesService.SpinRandomCodeAsync(userId);
+				return Ok(result);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+		}
 	}
 }

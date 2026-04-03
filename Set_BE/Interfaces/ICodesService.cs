@@ -12,6 +12,7 @@ namespace Set_BE.Interfaces
 		Task<IEnumerable<MovieCodeDto>> DropCodeAsync(CreateCodeDto dto);
 		Task<bool> RateCodeAsync(int codeId, RateCodeDto dto);
 		Task<bool> IncreaseViewCountAsync(int codeId);
+		Task<MovieCodeDto> SpinRandomCodeAsync(int userId);
 
 	}
 }
