@@ -97,5 +97,23 @@ namespace Set_BE.Controllers
 				return BadRequest(new { message = ex.Message });
 			}
 		}
+		[HttpGet("search")]
+		public async Task<IActionResult> SearchCodes(
+	[FromQuery] int currentUserId,
+	[FromQuery] string keyword = "",
+	[FromQuery] string category = "All",
+	[FromQuery] int page = 1,
+	[FromQuery] int pageSize = 10)
+		{
+			try
+			{
+				var result = await _codesService.SearchCodesAsync(currentUserId, keyword, category, page, pageSize);
+				return Ok(result);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = ex.Message });
+			}
+		}
 	}
 }

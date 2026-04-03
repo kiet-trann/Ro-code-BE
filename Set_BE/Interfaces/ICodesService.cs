@@ -13,6 +13,6 @@ namespace Set_BE.Interfaces
 		Task<bool> RateCodeAsync(int codeId, RateCodeDto dto);
 		Task<bool> IncreaseViewCountAsync(int codeId);
 		Task<MovieCodeDto> SpinRandomCodeAsync(int userId);
-
+		Task<PagedResponse<MovieCodeDto>> SearchCodesAsync(int currentUserId, string keyword, string category, int page, int pageSize);
 	}
 }

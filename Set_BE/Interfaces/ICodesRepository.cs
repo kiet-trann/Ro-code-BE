@@ -15,7 +15,7 @@ namespace Set_BE.Interfaces
 		Task AddCodesAsync(IEnumerable<MovieCode> codes);
 		Task AddRatingAsync(Rating rating);
 		Task SaveChangesAsync();
-		
+		Task<(IEnumerable<MovieCode> Codes, int TotalCount)> SearchCodesAsync(string keyword, string category, int page, int pageSize);
 
 	}
 }

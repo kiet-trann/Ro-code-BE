@@ -259,6 +259,32 @@ namespace Set_BE.Services
 			};
 		}
 
+		public async Task<PagedResponse<MovieCodeDto>> SearchCodesAsync(int currentUserId, string keyword, string category, int page, int pageSize)
+		{
+			var (codes, total) = await _repository.SearchCodesAsync(keyword, category, page, pageSize);
+
+			var dtos = codes.Select(code => new MovieCodeDto
+			{
+				Id = code.Id,
+				CodeText = code.CodeText,
+				Author = code.Author?.Username ?? "ẩn_danh",
+				ActorName = code.ActorName,
+				Category = code.Category,
+				ViewCount = code.ViewCount,
+				TimeAgo = GetTimeAgo(code.CreatedAt),
+				AvgRating = Math.Round(code.AverageRating, 1),
+				// Check xem user đang đăng nhập đã rate code này chưa
+				IsWatched = currentUserId > 0 && code.Ratings.Any(r => r.UserId == currentUserId)
+			});
+
+			return new PagedResponse<MovieCodeDto>
+			{
+				Items = dtos,
+				CurrentPage = page,
+				TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+			};
+		}
+
 		private string GetTimeAgo(DateTime createdAt)
 		{
 			var span = DateTime.UtcNow - createdAt;

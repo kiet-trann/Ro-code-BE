@@ -94,6 +94,38 @@ namespace Set_BE.Repositories
 		{
 			await _context.Ratings.AddAsync(rating);
 		}
+		public async Task<(IEnumerable<MovieCode> Codes, int TotalCount)> SearchCodesAsync(string keyword, string category, int page, int pageSize)
+		{
+			var query = _context.MovieCodes
+				.Include(c => c.Author)
+				.Include(c => c.Ratings)
+				.AsQueryable();
+
+			// 1. Lọc theo thể loại (Nếu có chọn khác "All")
+			if (!string.IsNullOrWhiteSpace(category) && category != "All")
+			{
+				query = query.Where(c => c.Category == category);
+			}
+
+			// 2. Tìm kiếm theo từ khóa (Tìm cả trong Mã Code lẫn Tên Diễn Viên)
+			if (!string.IsNullOrWhiteSpace(keyword))
+			{
+				// Sử dụng ILike để không phân biệt hoa/thường trên PostgreSQL
+				var searchPattern = $"%{keyword}%";
+				query = query.Where(c =>
+					EF.Functions.ILike(c.CodeText, searchPattern) ||
+					(c.ActorName != null && EF.Functions.ILike(c.ActorName, searchPattern))
+				);
+			}
+
+			var total = await query.CountAsync();
+			var codes = await query.OrderByDescending(c => c.CreatedAt)
+								   .Skip((page - 1) * pageSize)
+								   .Take(pageSize)
+								   .ToListAsync();
+
+			return (codes, total);
+		}
 
 		public async Task SaveChangesAsync()
 		{
