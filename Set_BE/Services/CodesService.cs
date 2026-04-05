@@ -17,45 +17,52 @@ namespace Set_BE.Services
 			_repository = repository;
 			_context = context;
 		}
-
+		private async Task<List<int>> GetUserSavedIdsAsync(int userId)
+		{
+			if (userId <= 0) return new List<int>();
+			return await _context.SavedCodes
+				.Where(sc => sc.UserId == userId)
+				.Select(sc => sc.MovieCodeId)
+				.ToListAsync();
+		}
 		public async Task<PagedResponse<MovieCodeDto>> GetTrendingAsync(int currentUserId, int page, int pageSize)
 		{
 			var (codes, total) = await _repository.GetTrendingCodesAsync(page, pageSize);
+			var savedIds = await GetUserSavedIdsAsync(currentUserId); // Lấy tủ đồ
 
 			var dtos = codes.Select(code => new MovieCodeDto
 			{
 				Id = code.Id,
 				CodeText = code.CodeText,
 				Author = code.Author?.Username ?? "ẩn_danh",
-				ActorName = code.ActorName, // Thêm mới
-				Category = code.Category,   // Thêm mới
-				ViewCount = code.ViewCount, // Thêm mới
+				ActorName = code.ActorName,
+				Category = code.Category,
+				ViewCount = code.ViewCount,
 				TimeAgo = GetTimeAgo(code.CreatedAt),
 				AvgRating = Math.Round(code.AverageRating, 1),
-				IsWatched = code.Ratings.Any(r => r.UserId == currentUserId)
+				IsWatched = code.Ratings.Any(r => r.UserId == currentUserId),
+				IsSaved = savedIds.Contains(code.Id) // CHECK VÀNG NÚT
 			});
 
-			return new PagedResponse<MovieCodeDto>
-			{
-				Items = dtos,
-				CurrentPage = page,
-				TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-			};
+			return new PagedResponse<MovieCodeDto> { Items = dtos, CurrentPage = page, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
 		}
 		public async Task<PagedResponse<MovieCodeDto>> GetNewAsync(int currentUserId, int page, int pageSize)
 		{
 			var (codes, total) = await _repository.GetNewCodesAsync(page, pageSize);
+			var savedIds = await GetUserSavedIdsAsync(currentUserId);
+
 			var dtos = codes.Select(code => new MovieCodeDto
 			{
 				Id = code.Id,
 				CodeText = code.CodeText,
 				Author = code.Author?.Username ?? "ẩn_danh",
-				ActorName = code.ActorName, // Thêm mới
-				Category = code.Category,   // Thêm mới
-				ViewCount = code.ViewCount, // Thêm mới
+				ActorName = code.ActorName,
+				Category = code.Category,
+				ViewCount = code.ViewCount,
 				TimeAgo = GetTimeAgo(code.CreatedAt),
 				AvgRating = Math.Round(code.AverageRating, 1),
-				IsWatched = code.Ratings.Any(r => r.UserId == currentUserId)
+				IsWatched = code.Ratings.Any(r => r.UserId == currentUserId),
+				IsSaved = savedIds.Contains(code.Id) // CHECK VÀNG NÚT
 			});
 			return new PagedResponse<MovieCodeDto> { Items = dtos, CurrentPage = page, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
 		}
@@ -63,17 +70,20 @@ namespace Set_BE.Services
 		public async Task<PagedResponse<MovieCodeDto>> GetRecommendedAsync(int currentUserId, int page, int pageSize)
 		{
 			var (codes, total) = await _repository.GetRecommendedCodesAsync(currentUserId, page, pageSize);
+			var savedIds = await GetUserSavedIdsAsync(currentUserId);
+
 			var dtos = codes.Select(code => new MovieCodeDto
 			{
 				Id = code.Id,
 				CodeText = code.CodeText,
 				Author = code.Author?.Username ?? "ẩn_danh",
-				ActorName = code.ActorName, // Thêm mới
-				Category = code.Category,   // Thêm mới
-				ViewCount = code.ViewCount, // Thêm mới
+				ActorName = code.ActorName,
+				Category = code.Category,
+				ViewCount = code.ViewCount,
 				TimeAgo = GetTimeAgo(code.CreatedAt),
 				AvgRating = Math.Round(code.AverageRating, 1),
-				IsWatched = false
+				IsWatched = false,
+				IsSaved = savedIds.Contains(code.Id) // CHECK VÀNG NÚT
 			});
 			return new PagedResponse<MovieCodeDto> { Items = dtos, CurrentPage = page, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
 		}
@@ -262,6 +272,7 @@ namespace Set_BE.Services
 		public async Task<PagedResponse<MovieCodeDto>> SearchCodesAsync(int currentUserId, string keyword, string category, int page, int pageSize)
 		{
 			var (codes, total) = await _repository.SearchCodesAsync(keyword, category, page, pageSize);
+			var savedIds = await GetUserSavedIdsAsync(currentUserId);
 
 			var dtos = codes.Select(code => new MovieCodeDto
 			{
@@ -273,16 +284,11 @@ namespace Set_BE.Services
 				ViewCount = code.ViewCount,
 				TimeAgo = GetTimeAgo(code.CreatedAt),
 				AvgRating = Math.Round(code.AverageRating, 1),
-				// Check xem user đang đăng nhập đã rate code này chưa
-				IsWatched = currentUserId > 0 && code.Ratings.Any(r => r.UserId == currentUserId)
+				IsWatched = currentUserId > 0 && code.Ratings.Any(r => r.UserId == currentUserId),
+				IsSaved = savedIds.Contains(code.Id) // CHECK VÀNG NÚT
 			});
 
-			return new PagedResponse<MovieCodeDto>
-			{
-				Items = dtos,
-				CurrentPage = page,
-				TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-			};
+			return new PagedResponse<MovieCodeDto> { Items = dtos, CurrentPage = page, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
 		}
 
 		public async Task<bool> ToggleSaveCodeAsync(int userId, int codeId)
@@ -304,16 +310,13 @@ namespace Set_BE.Services
 				ViewCount = code.ViewCount,
 				TimeAgo = GetTimeAgo(code.CreatedAt),
 				AvgRating = Math.Round(code.AverageRating, 1),
-				IsWatched = true // (Cứ cho là true đi vì họ đã lưu thì ắt đã xem/quan tâm)
+				IsWatched = true,
+				IsSaved = true // Đã nằm trong Tủ đồ thì 100% nút phải Vàng
 			});
 
-			return new PagedResponse<MovieCodeDto>
-			{
-				Items = dtos,
-				CurrentPage = page,
-				TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-			};
+			return new PagedResponse<MovieCodeDto> { Items = dtos, CurrentPage = page, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
 		}
+
 		private string GetTimeAgo(DateTime createdAt)
 		{
 			var span = DateTime.UtcNow - createdAt;

@@ -11,5 +11,6 @@
 		public string ActorName { get; set; } = string.Empty;
 		public string Category { get; set; } = "Movie";
 		public int ViewCount { get; set; } = 0;
+		public bool IsSaved { get; set; }
 	}
 }
