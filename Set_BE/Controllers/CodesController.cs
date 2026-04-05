@@ -159,5 +159,19 @@ namespace Set_BE.Controllers
 				return BadRequest(new { message = ex.Message });
 			}
 		}
+		// GET: api/codes/leaderboard
+		[HttpGet("leaderboard")]
+		public async Task<IActionResult> GetLeaderboard()
+		{
+			try
+			{
+				var result = await _codesService.GetLeaderboardAsync();
+				return Ok(result);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = ex.Message });
+			}
+		}
 	}
 }

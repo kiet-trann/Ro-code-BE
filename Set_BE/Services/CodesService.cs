@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Set_BE.Data;
 using Set_BE.DTOs;
 using Set_BE.Interfaces;
@@ -11,11 +12,12 @@ namespace Set_BE.Services
 	{
 		private readonly ICodesRepository _repository;
 		private readonly SetDbContext _context;
-
-		public CodesService(ICodesRepository repository, SetDbContext context)
+		private readonly IMemoryCache _cache;
+		public CodesService(ICodesRepository repository, SetDbContext context, IMemoryCache cache)
 		{
 			_repository = repository;
 			_context = context;
+			_cache = cache;
 		}
 		private async Task<List<int>> GetUserSavedIdsAsync(int userId)
 		{
@@ -320,6 +322,27 @@ namespace Set_BE.Services
 		public async Task<UserProfileDto> GetUserProfileAsync(int targetUserId, int currentUserId)
 		{
 			return await _repository.GetUserProfileAsync(targetUserId, currentUserId);
+		}
+
+		public async Task<List<LeaderboardUserDto>> GetLeaderboardAsync()
+		{
+			const string cacheKey = "LeaderboardTop10";
+
+			// Kiểm tra xem trong Cache đã có bản lưu tạm nào chưa?
+			if (!_cache.TryGetValue(cacheKey, out List<LeaderboardUserDto> top10))
+			{
+				// Nếu chưa có (hoặc đã quá 5 phút bị xóa), thì gọi xuống DB để tính toán lại
+				top10 = await _repository.GetTop10LeaderboardAsync();
+
+				// Setup thời gian sống cho Cache là 5 phút
+				var cacheOptions = new MemoryCacheEntryOptions()
+					.SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+
+				// Lưu kết quả vào Cache
+				_cache.Set(cacheKey, top10, cacheOptions);
+			}
+
+			return top10;
 		}
 
 		private string GetTimeAgo(DateTime createdAt)
