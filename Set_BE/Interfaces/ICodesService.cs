@@ -12,7 +12,7 @@ namespace Set_BE.Interfaces
 		Task<IEnumerable<MovieCodeDto>> DropCodeAsync(CreateCodeDto dto);
 		Task<bool> RateCodeAsync(int codeId, RateCodeDto dto);
 		Task<bool> IncreaseViewCountAsync(int codeId);
-		Task<MovieCodeDto> SpinRandomCodeAsync(int userId);
+		Task<MovieCodeDto> SpinRandomCodeAsync(int userId, CancellationToken cancellationToken);
 		Task<PagedResponse<MovieCodeDto>> SearchCodesAsync(int currentUserId, string keyword, string category, int page, int pageSize);
 		// 1. Hàm bật/tắt trạng thái lưu (Toggle)
 		Task<bool> ToggleSaveCodeAsync(int userId, int codeId);

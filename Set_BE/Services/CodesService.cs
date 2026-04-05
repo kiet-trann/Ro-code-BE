@@ -222,7 +222,7 @@ namespace Set_BE.Services
 			return true;
 		}
 
-		public async Task<MovieCodeDto> SpinRandomCodeAsync(int userId)
+		public async Task<MovieCodeDto> SpinRandomCodeAsync(int userId, CancellationToken cancellationToken)
 		{
 			var user = await _context.Users.FindAsync(userId);
 			if (user == null) throw new Exception("Không tìm thấy User!");
@@ -252,7 +252,7 @@ namespace Set_BE.Services
 
 			// 4. Lưu lại lịch sử quay (Lưu giờ UTC chuẩn quốc tế)
 			user.LastSpinAt = DateTime.UtcNow;
-			await _context.SaveChangesAsync();
+			await _context.SaveChangesAsync(cancellationToken);
 
 			// 5. Trả kết quả về
 			return new MovieCodeDto

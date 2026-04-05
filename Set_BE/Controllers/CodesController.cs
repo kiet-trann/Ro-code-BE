@@ -85,11 +85,12 @@ namespace Set_BE.Controllers
 		}
 
 		[HttpPost("spin/{userId}")]
-		public async Task<IActionResult> SpinGacha(int userId)
+		public async Task<IActionResult> SpinGacha(int userId, CancellationToken cancellationToken)
 		{
 			try
 			{
-				var result = await _codesService.SpinRandomCodeAsync(userId);
+				// Truyền nó xuống Service
+				var result = await _codesService.SpinRandomCodeAsync(userId, cancellationToken);
 				return Ok(result);
 			}
 			catch (Exception ex)
