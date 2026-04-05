@@ -158,18 +158,38 @@ namespace Set_BE.Repositories
 
 		public async Task<(IEnumerable<MovieCode> Codes, int TotalCount)> GetSavedCodesAsync(int userId, int page, int pageSize)
 		{
-			// Lấy ra danh sách các code mà user đã lưu, xếp cái mới lưu lên đầu
-			var query = _context.SavedCodes
-				.Where(sc => sc.UserId == userId)
-				.OrderByDescending(sc => sc.SavedAt)
-				.Select(sc => sc.MovieCode) // Từ bảng trung gian, chọc lấy bảng MovieCode
-				.Include(c => c.Author)
-				.Include(c => c.Ratings);
-
+			// Bước 1: Tìm trong tủ đồ của user này
+			var query = _context.SavedCodes.Where(sc => sc.UserId == userId);
 			var total = await query.CountAsync();
-			var codes = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-			return (codes, total);
+			// Bước 2: CHỈ LẤY DANH SÁCH ID (Không Include lằng nhằng ở đây)
+			var pagedSavedCodes = await query
+				.OrderByDescending(sc => sc.SavedAt)
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.Select(sc => new { sc.MovieCodeId })
+				.ToListAsync();
+
+			var savedCodeIds = pagedSavedCodes.Select(sc => sc.MovieCodeId).ToList();
+
+			if (!savedCodeIds.Any())
+			{
+				return (new List<MovieCode>(), 0); // Nếu tủ đồ trống thì trả về rỗng luôn cho lẹ
+			}
+
+			// Bước 3: Dùng danh sách ID đó để kéo MovieCode và các bảng liên quan về
+			var codes = await _context.MovieCodes
+				.Include(c => c.Author)
+				.Include(c => c.Ratings)
+				.Where(c => savedCodeIds.Contains(c.Id))
+				.ToListAsync();
+
+			// Bước 4: Sắp xếp lại thẻ Code hiển thị theo đúng thứ tự: Mới lưu nằm ở trên cùng
+			var sortedCodes = pagedSavedCodes
+				.Select(sc => codes.First(c => c.Id == sc.MovieCodeId))
+				.ToList();
+
+			return (sortedCodes, total);
 		}
 		public async Task SaveChangesAsync()
 		{
