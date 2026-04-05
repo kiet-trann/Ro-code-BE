@@ -9,10 +9,12 @@ namespace Set_BE.Controllers
 	public class CodesController : ControllerBase
 	{
 		private readonly ICodesService _codesService;
+		private readonly ICodeValidatorService _validatorService;
 
-		public CodesController(ICodesService codesService)
+		public CodesController(ICodesService codesService, ICodeValidatorService validatorService)
 		{
 			_codesService = codesService;
+			_validatorService = validatorService;
 		}
 
 		// GET: api/codes/trending?userId=1
@@ -29,7 +31,15 @@ namespace Set_BE.Controllers
 		{
 			if (string.IsNullOrWhiteSpace(dto.CodeText))
 				return BadRequest("Mã code không được để trống.");
+			bool isValid = await _validatorService.IsCodeRealAsync(dto.CodeText, dto.Category, dto.AuthorId);
 
+			if (!isValid)
+			{
+				return BadRequest(new
+				{
+					message = "Mã này không tìm thấy trên bản đồ thế giới! Lính mới đừng có quăng bom anh em nhé."
+				});
+			}
 			var result = await _codesService.DropCodeAsync(dto);
 			return Ok(result);
 		}
