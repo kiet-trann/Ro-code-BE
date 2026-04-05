@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Set_BE.Data;
 using Set_BE.Interfaces;
+using System.Text.Json;
 
 namespace Set_BE.Services
 {
@@ -32,23 +33,42 @@ namespace Set_BE.Services
 			}
 
 			// --- BƯỚC 2: CHỈ CHECK GOOGLE CHO LÍNH MỚI (< 10 CODE) ---
-			string site = (category == "Haiten") ? "nhentai.net" : "missav.ws";
-			string url = $"https://serpapi.com/search.json?engine=google&q=site:{site}+\"{code}\"&api_key={_apiKey}";
+			string siteQuery = "";
+
+			if (category == "Haiten")
+			{
+				// Thêm bao nhiêu tùy thích cho Haiten
+				siteQuery = "(site:nhentai.net OR site:hitomi.la)";
+			}
+			else
+			{
+				siteQuery = "(site:missav.ws OR site:jable.tv OR site:javlibrary.com OR site:missav123.com)";
+			}
+
+			// 3. Tạo câu lệnh Search tổng hợp
+			// Ví dụ: (site:missav.ws OR site:jable.tv) "ABCD-123"
+			string query = $"{siteQuery} \"{code}\"";
+			string url = $"https://serpapi.com/search.json?engine=google&q={Uri.EscapeDataString(query)}&api_key={_apiKey}";
 
 			try
 			{
 				var response = await _httpClient.GetAsync(url);
-				if (!response.IsSuccessStatusCode) return true; // Nếu SerpApi lỗi quota, cho qua để tránh block oan
+				if (!response.IsSuccessStatusCode) return true;
 
 				var content = await response.Content.ReadAsStringAsync();
-				var json = JObject.Parse(content);
+				using var doc = JsonDocument.Parse(content);
 
-				var organicResults = json["organic_results"] as JArray;
-				return organicResults != null && organicResults.Count > 0;
+				// Chỉ cần 1 trong các site trên có kết quả là duyệt!
+				if (doc.RootElement.TryGetProperty("organic_results", out var results))
+				{
+					return results.GetArrayLength() > 0;
+				}
+
+				return false;
 			}
 			catch
 			{
-				return true; // Lỗi mạng bất ngờ thì cho qua
+				return true;
 			}
 		}
 	}
