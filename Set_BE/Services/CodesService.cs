@@ -317,6 +317,11 @@ namespace Set_BE.Services
 			return new PagedResponse<MovieCodeDto> { Items = dtos, CurrentPage = page, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
 		}
 
+		public async Task<UserProfileDto> GetUserProfileAsync(int targetUserId, int currentUserId)
+		{
+			return await _repository.GetUserProfileAsync(targetUserId, currentUserId);
+		}
+
 		private string GetTimeAgo(DateTime createdAt)
 		{
 			var span = DateTime.UtcNow - createdAt;

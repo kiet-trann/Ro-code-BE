@@ -22,5 +22,6 @@ namespace Set_BE.Interfaces
 
 		// 2. Hàm lấy danh sách Tủ Đồ của user
 		Task<(IEnumerable<MovieCode> Codes, int TotalCount)> GetSavedCodesAsync(int userId, int page, int pageSize);
+		Task<UserProfileDto> GetUserProfileAsync(int targetUserId, int currentUserId);
 	}
 }

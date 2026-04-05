@@ -144,5 +144,20 @@ namespace Set_BE.Controllers
 				return StatusCode(500, new { message = ex.Message });
 			}
 		}
+
+		// GET: api/codes/profile/5?currentUserId=5
+		[HttpGet("profile/{targetUserId}")]
+		public async Task<IActionResult> GetUserProfile(int targetUserId, [FromQuery] int currentUserId)
+		{
+			try
+			{
+				var profile = await _codesService.GetUserProfileAsync(targetUserId, currentUserId);
+				return Ok(profile);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+		}
 	}
 }

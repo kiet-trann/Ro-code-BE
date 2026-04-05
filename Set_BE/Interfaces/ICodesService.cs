@@ -19,5 +19,6 @@ namespace Set_BE.Interfaces
 
 		// 2. Hàm lấy danh sách Tủ Đồ của user
 		Task<PagedResponse<MovieCodeDto>> GetSavedCodesAsync(int userId, int page, int pageSize);
+		Task<UserProfileDto> GetUserProfileAsync(int targetUserId, int currentUserId);
 	}
 }

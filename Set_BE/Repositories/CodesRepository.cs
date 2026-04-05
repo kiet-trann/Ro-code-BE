@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Set_BE.Data;
+using Set_BE.DTOs;
 using Set_BE.Interfaces;
 using Set_BE.Models;
 
@@ -190,6 +191,41 @@ namespace Set_BE.Repositories
 				.ToList();
 
 			return (sortedCodes, total);
+		}
+
+		public async Task<UserProfileDto> GetUserProfileAsync(int targetUserId, int currentUserId)
+		{
+			var user = await _context.Users.FindAsync(targetUserId);
+			if (user == null) throw new Exception("Không tìm thấy Idol này!");
+
+			// 1. ÉP POSTGRESQL TỰ TÍNH TỔNG (Giải quyết góc khuất #2)
+			var stats = await _context.MovieCodes
+				.Where(c => c.AuthorId == targetUserId)
+				.GroupBy(c => c.AuthorId)
+				.Select(g => new {
+					TotalUploads = g.Count(),
+					TotalViews = g.Sum(c => c.ViewCount)
+				})
+				.FirstOrDefaultAsync();
+
+			// 2. Tính số lượng code đã lưu
+			var totalSaved = await _context.SavedCodes.CountAsync(sc => sc.UserId == targetUserId);
+
+			// 3. Phân quyền: Có phải là tự đang xem trang của chính mình không?
+			bool isOwner = (targetUserId == currentUserId);
+
+			return new UserProfileDto
+			{
+				UserId = user.Id,
+				Username = user.Username,
+				// Tạo avatar tự động từ chữ cái đầu tiên (Giải quyết góc khuất #3)
+				AvatarUrl = $"https://ui-avatars.com/api/?name={user.Username}&background=random&color=fff&size=128&bold=true",
+				TotalUploaded = stats?.TotalUploads ?? 0,
+				TotalViews = stats?.TotalViews ?? 0,
+				// Giải quyết góc khuất #1: Giấu nhẹm số lượng tủ đồ nếu là người lạ xem
+				TotalSaved = isOwner ? totalSaved : 0,
+				IsOwner = isOwner
+			};
 		}
 		public async Task SaveChangesAsync()
 		{
