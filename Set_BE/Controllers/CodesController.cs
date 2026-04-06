@@ -293,5 +293,10 @@ namespace Set_BE.Controllers
 				return BadRequest(new { message = ex.Message });
 			}
 		}
+		[HttpGet("ping")]
+		public IActionResult Ping()
+		{
+			return Ok(new { message = "Rổ code đang thức!" });
+		}
 	}
 }
