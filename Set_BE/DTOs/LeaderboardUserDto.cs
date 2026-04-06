@@ -9,5 +9,6 @@
 		public int TotalScore { get; set; }
 		public int TotalUploads { get; set; }
 		public int TotalViews { get; set; }
+		public string RankTier { get; set; } = string.Empty;
 	}
 }
