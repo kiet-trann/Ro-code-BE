@@ -214,3 +214,5 @@ D:\Kiệt\Ro-code-BE\Set_BE\obj\Debug\net8.0\refint\Set_BE.dll
 D:\Kiệt\Ro-code-BE\Set_BE\obj\Debug\net8.0\Set_BE.pdb
 D:\Kiệt\Ro-code-BE\Set_BE\obj\Debug\net8.0\Set_BE.genruntimeconfig.cache
 D:\Kiệt\Ro-code-BE\Set_BE\obj\Debug\net8.0\ref\Set_BE.dll
+D:\Kiệt\Ro-code-BE\Set_BE\bin\Debug\net8.0\Newtonsoft.Json.dll
+D:\Kiệt\Ro-code-BE\Set_BE\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
