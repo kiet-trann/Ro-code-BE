@@ -232,37 +232,21 @@ namespace Set_BE.Repositories
 
 		public async Task<List<LeaderboardUserDto>> GetTop10LeaderboardAsync()
 		{
-			// 1. Quét bảng Users và móc sang bảng MovieCodes để tính toán
 			var topUsersQuery = await _context.Users
+				.Where(u => u.ActionPoints > 0) // Chỉ lấy những ai có điểm
+				.OrderByDescending(u => u.ActionPoints) // Xếp hạng theo ĐIỂM THẬT
+				.Take(10)
 				.Select(u => new
 				{
 					UserId = u.Id,
 					Username = u.Username,
-					// Đếm số lượng code đã up
+					ActionPoints = u.ActionPoints, // Lấy điểm thật
+					RankTier = u.RankTier,         // Móc luôn RankTier từ Entity
 					Uploads = _context.MovieCodes.Count(c => c.AuthorId == u.Id),
-					// Tính tổng view (ép kiểu int? để phòng trường hợp chưa có code nào bị null)
-					Views = _context.MovieCodes.Where(c => c.AuthorId == u.Id).Sum(c => (int?)c.ViewCount) ?? 0,
-					// Tính tổng số lượt Rate
-					Ratings = _context.MovieCodes.Where(c => c.AuthorId == u.Id).Sum(c => (int?)c.TotalRatings) ?? 0
+					Views = _context.MovieCodes.Where(c => c.AuthorId == u.Id).Sum(c => (int?)c.ViewCount) ?? 0
 				})
-				.Where(x => x.Uploads > 0) // BẮT BUỘC: Phải có đóng góp ít nhất 1 code mới cho lên bảng
-				.Select(x => new
-				{
-					x.UserId,
-					x.Username,
-					x.Uploads,
-					x.Views,
-					// ÁP DỤNG CÔNG THỨC NHÂN PHẨM
-					TotalScore = (x.Uploads * 5) + (x.Views * 1) + (x.Ratings * 2)
-				})
-				// LUẬT TIE-BREAKER: Sắp xếp theo Điểm -> View -> Số Code
-				.OrderByDescending(x => x.TotalScore)
-				.ThenByDescending(x => x.Views)
-				.ThenByDescending(x => x.Uploads)
-				.Take(10) // CHỈ LẤY TOP 10
 				.ToListAsync();
 
-			// 2. Chuyển đổi sang DTO và gán Hạng (Rank), tạo Avatar
 			int currentRank = 1;
 			var leaderboard = topUsersQuery.Select(x => new LeaderboardUserDto
 			{
@@ -270,9 +254,10 @@ namespace Set_BE.Repositories
 				UserId = x.UserId,
 				Username = x.Username,
 				AvatarUrl = $"https://ui-avatars.com/api/?name={x.Username}&background=random&color=fff&size=128&bold=true",
-				TotalScore = x.TotalScore,
+				TotalScore = x.ActionPoints, // ĐIỂM THẬT CHỨ KHÔNG TÍNH NHẨM NỮA
 				TotalUploads = x.Uploads,
-				TotalViews = x.Views
+				TotalViews = x.Views,
+				RankTier = x.RankTier // Đừng quên bổ sung biến này vào LeaderboardUserDto nhé
 			}).ToList();
 
 			return leaderboard;

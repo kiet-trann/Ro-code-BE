@@ -242,5 +242,42 @@ namespace Set_BE.Controllers
 				return StatusCode(500, new { message = "Máy giặt hỏng: " + ex.Message });
 			}
 		}
+		// API Ẩn: Truy lĩnh lương hưu cho anh em up code từ thời tiền sử
+		[HttpPost("admin/grant-legacy-points")]
+		public async Task<IActionResult> GrantLegacyPoints([FromQuery] string secretKey)
+		{
+			if (secretKey != "roset-tuyet-mat-2026") return Unauthorized(new { message = "Cấm cửa!" });
+
+			try
+			{
+				var users = await _context.Users.ToListAsync();
+				int updatedCount = 0;
+
+				foreach (var user in users)
+				{
+					// Đếm số code người này đã up
+					int uploadCount = await _context.MovieCodes.CountAsync(c => c.AuthorId == user.Id);
+
+					// Nếu có up code mà điểm = 0 thì truy lĩnh (+10đ mỗi code)
+					if (uploadCount > 0 && user.ActionPoints == 0)
+					{
+						user.ActionPoints = uploadCount * 10;
+						updatedCount++;
+					}
+				}
+
+				await _context.SaveChangesAsync();
+
+				return Ok(new
+				{
+					message = "Phát lương hưu hoàn tất!",
+					usersUpdated = updatedCount
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Lỗi kho bạc: " + ex.Message });
+			}
+		}
 	}
 }
