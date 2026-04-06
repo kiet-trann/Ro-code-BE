@@ -1,1 +1,16 @@
-.vs/ 
+# Bỏ qua thư mục build
+bin/
+obj/
+
+# Bỏ qua các file cài đặt của Visual Studio / VS Code
+.vs/
+.vscode/
+
+# 🚨 BỎ QUA FILE CHỨA MẬT KHẨU (QUAN TRỌNG NHẤT)
+appsettings.json
+appsettings.*.json
+
+# Bỏ qua database SQLite (nếu có dùng test)
+*.db
+*.db-shm
+*.db-wal
