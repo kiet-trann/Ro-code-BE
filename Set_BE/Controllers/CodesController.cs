@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Set_BE.Data;
 using Set_BE.DTOs;
 using Set_BE.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace Set_BE.Controllers
 {
@@ -10,11 +13,13 @@ namespace Set_BE.Controllers
 	{
 		private readonly ICodesService _codesService;
 		private readonly ICodeValidatorService _validatorService;
+		private readonly SetDbContext _context;
 
-		public CodesController(ICodesService codesService, ICodeValidatorService validatorService)
+		public CodesController(ICodesService codesService, ICodeValidatorService validatorService, SetDbContext context)
 		{
 			_codesService = codesService;
 			_validatorService = validatorService;
+			_context = context;
 		}
 
 		// GET: api/codes/trending?userId=1
@@ -190,6 +195,51 @@ namespace Set_BE.Controllers
 			catch (Exception ex)
 			{
 				return StatusCode(500, new { message = ex.Message });
+			}
+		}
+		// API Ẩn: Chỉ dùng 1 lần rồi thôi, hoặc giấu đi để Admin xài
+		[HttpPost("admin/normalize-legacy-codes")]
+		public async Task<IActionResult> NormalizeLegacyCodes([FromQuery] string secretKey)
+		{
+			// 1. CHỐNG NGƯỜI LẠ (Bảo mật thô sơ nhưng hiệu quả)
+			if (secretKey != "roset-tuyet-mat-2026")
+			{
+				return Unauthorized(new { message = "Lượn đi cho nước nó trong! Khu vực cấm." });
+			}
+
+			try
+			{
+				// 2. KÉO ĐỒ CỔ LÊN (Chỉ lấy những mã mà NormalizedCode đang bị bỏ trống)
+				var legacyCodes = await _context.MovieCodes
+					.Where(c => string.IsNullOrEmpty(c.NormalizedCode))
+					.ToListAsync();
+
+				if (!legacyCodes.Any())
+				{
+					return Ok(new { message = "Kho dữ liệu đã sạch bóng, không có mã đồ cổ nào cần tẩy trần!" });
+				}
+
+				// 3. ĐƯA VÀO "MÁY GIẶT"
+				int count = 0;
+				foreach (var code in legacyCodes)
+				{
+					// Tẩy sạch mọi thứ, chỉ giữ lại A-Z và 0-9
+					code.NormalizedCode = Regex.Replace(code.CodeText.ToUpper(), @"[^A-Z0-9]", "");
+					count++;
+				}
+
+				// 4. LƯU LẠI VÀO DB
+				await _context.SaveChangesAsync();
+
+				return Ok(new
+				{
+					message = "Tẩy trần hoàn tất!",
+					totalCleaned = count
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Máy giặt hỏng: " + ex.Message });
 			}
 		}
 	}
