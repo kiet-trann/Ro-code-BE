@@ -378,6 +378,68 @@ namespace Set_BE.Services
 
 			return top10;
 		}
+		public async Task<string> ReportCodeAsync(int codeId, int reporterId)
+		{
+			// 1. Kiểm tra nhân phẩm người Report (Cấm Sét Nhựa thao túng)
+			var reporter = await _context.Users.FindAsync(reporterId);
+			if (reporter.ActionPoints < 50)
+			{
+				throw new Exception("Bần tăng xin lui! Rank Sét Nhựa chưa đủ công lực để phán xét anh em.");
+			}
+
+			// 2. Tìm mã code
+			var code = await _context.MovieCodes
+				.Include(c => c.Reports)
+				.FirstOrDefaultAsync(c => c.Id == codeId);
+
+			if (code == null) throw new Exception("Mã này đã bay màu từ trước rồi!");
+
+			// 3. Chống Spam: Một người chỉ được chém 1 nhát
+			if (code.Reports.Any(r => r.ReporterId == reporterId))
+			{
+				throw new Exception("Ông đã cắm cờ mã này rồi, định spam à?");
+			}
+
+			// 4. Thêm án phạt
+			code.Reports.Add(new CodeReport { ReporterId = reporterId, MovieCodeId = codeId });
+			await _context.SaveChangesAsync(); // Lưu phát để cập nhật số đếm
+
+			// 5. 🚨 THỜI KHẮC PHÁN XÉT (ĐỦ 5 VOTE) 🚨
+			int totalReports = code.Reports.Count;
+			if (totalReports >= 5)
+			{
+				// a. Xử lý tác giả (Trừ 50 điểm)
+				var author = await _context.Users.FindAsync(code.AuthorId);
+				if (author != null)
+				{
+					author.ActionPoints -= 50; // Cho âm điểm luôn để gánh nợ
+				}
+
+				// b. Chia tiền thưởng cho 5 anh hùng (Mỗi người +10 điểm)
+				var reporterIds = code.Reports.Select(r => r.ReporterId).ToList();
+				var heroes = await _context.Users.Where(u => reporterIds.Contains(u.Id)).ToListAsync();
+				foreach (var hero in heroes)
+				{
+					hero.ActionPoints += 10;
+				}
+
+				// c. Trảm mã code (Dọn sạch cả Rating và SavedCode liên quan nếu bạn không xài Cascade)
+				// Lưu ý: Nếu DB của bạn đã cài OnDelete Cascade, chỉ cần Remove(code) là đủ.
+				var relatedSaves = await _context.SavedCodes.Where(sc => sc.MovieCodeId == codeId).ToListAsync();
+				_context.SavedCodes.RemoveRange(relatedSaves);
+
+				var relatedRatings = await _context.Ratings.Where(r => r.MovieCodeId == codeId).ToListAsync();
+				_context.Ratings.RemoveRange(relatedRatings);
+
+				_context.MovieCodes.Remove(code);
+
+				await _context.SaveChangesAsync();
+
+				return "TÒA ÁN: Mã rác đã bị tiêu hủy! Kẻ lừa đảo bị trừ 50 điểm, 5 anh hùng được cộng điểm thưởng.";
+			}
+
+			return $"Đã cắm cờ thành công! (Tiến độ: {totalReports}/5). Đủ 5 cờ mã này sẽ bay màu.";
+		}
 
 		private string GetTimeAgo(DateTime createdAt)
 		{

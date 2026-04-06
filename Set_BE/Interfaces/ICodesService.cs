@@ -21,5 +21,6 @@ namespace Set_BE.Interfaces
 		Task<PagedResponse<MovieCodeDto>> GetSavedCodesAsync(int userId, int page, int pageSize);
 		Task<UserProfileDto> GetUserProfileAsync(int targetUserId, int currentUserId);
 		Task<List<LeaderboardUserDto>> GetLeaderboardAsync();
+		Task<string> ReportCodeAsync(int codeId, int reporterId);
 	}
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Set_BE.Data;
 using Set_BE.DTOs;
 using Set_BE.Interfaces;
+using Set_BE.Repositories;
 using System.Text.RegularExpressions;
 
 namespace Set_BE.Controllers
@@ -277,6 +278,19 @@ namespace Set_BE.Controllers
 			catch (Exception ex)
 			{
 				return StatusCode(500, new { message = "Lỗi kho bạc: " + ex.Message });
+			}
+		}
+		[HttpPost("{codeId}/report")]
+		public async Task<IActionResult> ReportCode(int codeId, [FromBody] int reporterId)
+		{
+			try
+			{
+				var message = await _codesService.ReportCodeAsync(codeId, reporterId);
+				return Ok(new { message = message });
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
 			}
 		}
 	}

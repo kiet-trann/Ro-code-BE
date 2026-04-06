@@ -26,5 +26,6 @@
 
 		// Phân loại: "Movie" hoặc "Haiten"
 		public string Category { get; set; } = "Movie";
+		public ICollection<CodeReport> Reports { get; set; } = new List<CodeReport>();
 	}
 }

@@ -12,6 +12,7 @@ namespace Set_BE.Data
 		public DbSet<Rating> Ratings { get; set; }
 		public DbSet<Comment> Comments { get; set; }
 		public DbSet<SavedCode> SavedCodes { get; set; }
+		public DbSet<CodeReport> CodeReports { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
