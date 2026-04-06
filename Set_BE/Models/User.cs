@@ -20,5 +20,6 @@
 		public ICollection<MovieCode> PostedCodes { get; set; } = new List<MovieCode>();
 		public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
 		public DateTime? LastSpinAt { get; set; }
+		public string LegacyTitles { get; set; } = string.Empty;
 	}
 }

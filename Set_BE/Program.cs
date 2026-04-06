@@ -36,6 +36,7 @@ namespace Set_BE
 			builder.Services.AddScoped<ICodesRepository, CodesRepository>();
 			builder.Services.AddScoped<ICodesService, CodesService>();
 			builder.Services.AddHttpClient<ICodeValidatorService, CodeValidatorService>();
+			builder.Services.AddHostedService<SeasonResetService>();
 			builder.Services.AddCors(options =>
 			{
 				options.AddPolicy("AllowReactApp",
