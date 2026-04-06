@@ -30,18 +30,27 @@ namespace Set_BE.Controllers
 		public async Task<IActionResult> DropCode([FromBody] CreateCodeDto dto)
 		{
 			if (string.IsNullOrWhiteSpace(dto.CodeText))
-				return BadRequest("Mã code không được để trống.");
-			bool isValid = await _validatorService.IsCodeRealAsync(dto.CodeText, dto.Category, dto.AuthorId);
+				return BadRequest(new { message = "Mã code không được để trống." });
 
-			if (!isValid)
+			try
 			{
-				return BadRequest(new
+				// Giao toàn quyền sinh sát cho Service
+				var result = await _codesService.DropCodeAsync(dto);
+				return Ok(new
 				{
-					message = "Mã này không tìm thấy trên bản đồ thế giới! Lính mới đừng có quăng bom anh em nhé."
+					message = "Thả code thành công! Đã cộng điểm nhân phẩm.",
+					data = result
 				});
 			}
-			var result = await _codesService.DropCodeAsync(dto);
-			return Ok(result);
+			catch (ArgumentException ex)
+			{
+				// Bắt các lỗi (Trùng lặp, Fake, Regex) và trả về Frontend
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "Server đang bận rèn vũ khí, thử lại sau nhé!" });
+			}
 		}
 
 		// POST: api/codes/{id}/rate

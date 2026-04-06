@@ -13,11 +13,13 @@ namespace Set_BE.Services
 		private readonly ICodesRepository _repository;
 		private readonly SetDbContext _context;
 		private readonly IMemoryCache _cache;
-		public CodesService(ICodesRepository repository, SetDbContext context, IMemoryCache cache)
+		private readonly ICodeValidatorService _validatorService;
+		public CodesService(ICodesRepository repository, SetDbContext context, IMemoryCache cache, ICodeValidatorService validatorService)
 		{
 			_repository = repository;
 			_context = context;
 			_cache = cache;
+			_validatorService = validatorService;
 		}
 		private async Task<List<int>> GetUserSavedIdsAsync(int userId)
 		{
@@ -130,45 +132,77 @@ namespace Set_BE.Services
 		public async Task<IEnumerable<MovieCodeDto>> DropCodeAsync(CreateCodeDto dto)
 		{
 			var rawCodes = dto.CodeText.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
 			var newCodes = new List<MovieCode>();
 			var resultDtos = new List<MovieCodeDto>();
+
+			// Lấy thông tin User ra để tí nữa cộng điểm và check Rank
+			var author = await _context.Users.FindAsync(dto.AuthorId);
+			if (author == null) throw new Exception("Không tìm thấy giang hồ này trong Hầm Ngầm!");
+
+			int addedCount = 0; // Đếm số code đăng thành công để tính lương
 
 			foreach (var raw in rawCodes)
 			{
 				var cleanedCode = raw.Trim().ToUpper();
 				if (string.IsNullOrWhiteSpace(cleanedCode)) continue;
 
-				// 🚨 KIỂM TRA LUẬT HAITEN: Chỉ cho phép 1 đến 6 chữ số
-				if (dto.Category == "Haiten")
+				// 🥊 1. TẨY TRẦN DỮ LIỆU (Giữ lại chữ và số)
+				string normalized = Regex.Replace(cleanedCode, @"[^A-Z0-9]", "");
+
+				// 🥊 2. KIỂM TRA HÀNG NHAI LẠI (Duplicate Check)
+				bool isDuplicate = await _context.MovieCodes.AnyAsync(c => c.NormalizedCode == normalized);
+				if (isDuplicate)
 				{
-					bool isOnlyDigits = Regex.IsMatch(cleanedCode, @"^\d{1,6}$");
-					if (!isOnlyDigits)
-					{
-						// Quăng lỗi ngay lập tức để báo về cho React
-						throw new ArgumentException($"Code '{cleanedCode}' không hợp lệ! Haiten chỉ được chứa 1 đến 6 chữ số.");
-					}
+					// Báo lỗi luôn, hoặc bạn có thể dùng 'continue' để bỏ qua mã trùng và lưu các mã khác
+					throw new ArgumentException($"Mã '{cleanedCode}' anh em đã thẩm nát rồi! Múa phím kiểu gì cũng bị lộ nhé.");
 				}
 
+				// 🚨 3. KIỂM TRA LUẬT HAITEN
+				if (dto.Category == "Haiten")
+				{
+					bool isOnlyDigits = Regex.IsMatch(normalized, @"^\d{1,6}$"); // Dùng normalized check cho chuẩn
+					if (!isOnlyDigits)
+						throw new ArgumentException($"Code '{cleanedCode}' không hợp lệ! Haiten chỉ được chứa số.");
+				}
+
+				// 🥊 4. THẨM ĐỊNH GOOGLE SERPAPI (Chỉ soi lũ Sét Nhựa, Sét Đồng)
+				if (author.ActionPoints < 50)
+				{
+					// Gọi Service thẩm định ngay tại đây, cho từng mã một
+					bool isReal = await _validatorService.IsCodeRealAsync(cleanedCode, dto.Category, dto.AuthorId);
+					if (!isReal)
+						throw new ArgumentException($"Mã '{cleanedCode}' là hàng pha ke! Lính mới đừng định lùa gà anh em.");
+				}
+
+				// Đạt mọi tiêu chuẩn -> Thêm vào hàng đợi
 				newCodes.Add(new MovieCode
 				{
 					CodeText = cleanedCode,
+					NormalizedCode = normalized, // Gán bảo bối vào đây
 					AuthorId = dto.AuthorId,
-					ActorName = dto.ActorName, // Thêm diễn viên
-					Category = dto.Category,   // Thêm phân loại
-					ViewCount = 0,             // Khởi tạo lượt xem bằng 0
+					ActorName = dto.ActorName,
+					Category = dto.Category,
+					ViewCount = 0,
 					CreatedAt = DateTime.UtcNow,
 					AverageRating = 0,
 					TotalRatings = 0
 				});
+
+				addedCount++;
 			}
 
+			// 🥊 5. LƯU DATABASE VÀ PHÁT LƯƠNG
 			if (newCodes.Any())
 			{
 				await _repository.AddCodesAsync(newCodes);
+
+				// Thưởng 10 điểm nhân phẩm cho mỗi siêu phẩm
+				author.ActionPoints += (addedCount * 10);
+
 				await _repository.SaveChangesAsync();
 			}
 
+			// 6. TRẢ VỀ DTO
 			foreach (var code in newCodes)
 			{
 				resultDtos.Add(new MovieCodeDto
@@ -178,7 +212,7 @@ namespace Set_BE.Services
 					ActorName = code.ActorName,
 					Category = code.Category,
 					ViewCount = code.ViewCount,
-					Author = "bạn",
+					Author = author.Username, // Hiển thị tên thật luôn cho ngầu
 					TimeAgo = "Vừa xong",
 					AvgRating = 0,
 					IsWatched = false

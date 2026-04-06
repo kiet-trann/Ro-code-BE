@@ -5,6 +5,7 @@
 		public int Id { get; set; }
 
 		public string CodeText { get; set; } = string.Empty; // Mã ẩn danh
+		public string NormalizedCode { get; set; }
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 		// Caching điểm trung bình để Query Top Tier cho nhanh, không cần tính toán lại mỗi lần load
