@@ -224,7 +224,9 @@ namespace Set_BE.Repositories
 				TotalViews = stats?.TotalViews ?? 0,
 				// Giải quyết góc khuất #1: Giấu nhẹm số lượng tủ đồ nếu là người lạ xem
 				TotalSaved = isOwner ? totalSaved : 0,
-				IsOwner = isOwner
+				IsOwner = isOwner,
+				ActionPoints = user.ActionPoints,
+				RankTier = user.RankTier
 			};
 		}
 

@@ -11,5 +11,7 @@
 
 		// Cờ báo hiệu cho Frontend biết có được hiện Tab "Tủ Đồ" hay không
 		public bool IsOwner { get; set; }
+		public int ActionPoints { get; set; } 
+		public string RankTier { get; set; } = string.Empty;
 	}
 }
