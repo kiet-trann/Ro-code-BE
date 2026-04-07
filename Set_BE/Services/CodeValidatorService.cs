@@ -22,32 +22,24 @@ namespace Set_BE.Services
 		public async Task<bool> IsCodeRealAsync(string code, string category, int authorId)
 		{
 			// --- BƯỚC 1: KIỂM TRA NHÂN PHẨM (BYPASS LOGIC) ---
-			// Đếm xem user này đã đóng góp bao nhiêu code "sạch" rồi
-			var approvedCodesCount = await _context.MovieCodes
-				.CountAsync(c => c.AuthorId == authorId);
+			var approvedCodesCount = await _context.MovieCodes.CountAsync(c => c.AuthorId == authorId);
+			if (approvedCodesCount >= 10) return true;
 
-			// NẾU LÀ LÃO LÀNG (Ví dụ: Đã share > 10 code): CHO QUA LUÔN (Tiết kiệm API)
-			if (approvedCodesCount >= 10)
-			{
-				return true;
-			}
-
-			// --- BƯỚC 2: CHỈ CHECK GOOGLE CHO LÍNH MỚI (< 10 CODE) ---
-			string siteQuery = "";
+			// --- BƯỚC 2: TẠO LỆNH TÌM KIẾM MỞ RỘNG (KHÔNG ÉP SITE) ---
+			string query = "";
 
 			if (category == "Haiten")
 			{
-				// Thêm bao nhiêu tùy thích cho Haiten
-				siteQuery = "(site:nhentai.net OR site:hitomi.la)";
+				// Thêm chữ nhentai, hitomi để Google tự hiểu ngữ cảnh, không khóa chết domain .net hay .la nữa
+				query = $"\"{code}\" (nhentai OR hitomi OR doujinshi)";
 			}
 			else
 			{
-				siteQuery = "(site:missav.ws OR site:jable.tv OR site:javlibrary.com OR site:missav123.com)";
+				// Tuyệt chiêu: Tìm thẳng mã code + chữ jav hoặc tên các web nổi tiếng
+				query = $"\"{code}\" (jav OR missav OR jable OR javlibrary)";
 			}
 
-			// 3. Tạo câu lệnh Search tổng hợp
-			// Ví dụ: (site:missav.ws OR site:jable.tv) "ABCD-123"
-			string query = $"{siteQuery} \"{code}\"";
+			// 3. Gọi SerpApi
 			string url = $"https://serpapi.com/search.json?engine=google&q={Uri.EscapeDataString(query)}&api_key={_apiKey}";
 
 			try
@@ -58,7 +50,7 @@ namespace Set_BE.Services
 				var content = await response.Content.ReadAsStringAsync();
 				using var doc = JsonDocument.Parse(content);
 
-				// Chỉ cần 1 trong các site trên có kết quả là duyệt!
+				// Chỉ cần tìm thấy MỘT KẾT QUẢ BẤT KỲ trên quả đất này là duyệt!
 				if (doc.RootElement.TryGetProperty("organic_results", out var results))
 				{
 					return results.GetArrayLength() > 0;
